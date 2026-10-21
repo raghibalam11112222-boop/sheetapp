@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as XLSX from "xlsx";
 import { analyzeWorkbook, parseWorkbook } from "@/lib/spreadsheet";
 import { transformRow, type TransformContext } from "@/lib/generation/import";
-import type { GeneratedField } from "@prisma/client";
+import type { GeneratedField } from "@/generated/prisma/client";
 
 function sheetCtx(columns: string[], mode: TransformContext["mode"] = "fix"): TransformContext {
   const bytes = (() => {

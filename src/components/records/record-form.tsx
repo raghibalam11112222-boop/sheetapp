@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import type { GeneratedField } from "@prisma/client";
+import type { GeneratedField } from "@/generated/prisma/client";
 import { createRecordAction, updateRecordAction } from "@/actions/records";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";

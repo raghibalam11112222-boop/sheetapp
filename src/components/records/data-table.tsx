@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Download, Eye, Filter, Loader2, Plus, Search, Trash2, X, ChevronUp, ChevronDown } from "lucide-react";
-import type { GeneratedField } from "@prisma/client";
+import type { GeneratedField } from "@/generated/prisma/client";
 import { deleteRecordAction } from "@/actions/records";
 import type { FilterOp, RecordFilter } from "@/lib/data/records";
 import { Button } from "@/components/ui/button";

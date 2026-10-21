@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import type { GeneratedField } from "@prisma/client";
+import type { GeneratedField } from "@/generated/prisma/client";
 
 /**
  * Builds an .xlsx workbook for record export (app.txt §23 "Export Excel").

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import type { GeneratedField } from "@prisma/client";
+import type { GeneratedField } from "@/generated/prisma/client";
 import { EMAIL_RE } from "@/lib/validation/patterns";
 import type {
   CellValue,

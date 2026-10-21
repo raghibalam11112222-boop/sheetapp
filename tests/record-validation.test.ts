@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { GeneratedField } from "@prisma/client";
+import type { GeneratedField } from "@/generated/prisma/client";
 import { validateRecordData } from "@/lib/validation/records";
 
 function field(partial: Partial<GeneratedField> & { name: string; type: GeneratedField["type"] }): GeneratedField {

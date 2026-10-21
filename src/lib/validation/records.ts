@@ -1,4 +1,4 @@
-import type { GeneratedField } from "@prisma/client";
+import type { GeneratedField } from "@/generated/prisma/client";
 import { coerceDate, coerceNumber } from "@/lib/generation/import";
 import { EMAIL_RE, PHONE_RE } from "./patterns";
 

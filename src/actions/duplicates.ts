@@ -1,6 +1,6 @@
 "use server";
 
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { withAction, ActionError } from "@/lib/action";
 import { requirePermissionOn } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db";

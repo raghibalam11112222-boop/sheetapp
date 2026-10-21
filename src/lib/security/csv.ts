@@ -1,4 +1,4 @@
-import type { GeneratedField } from "@prisma/client";
+import type { GeneratedField } from "@/generated/prisma/client";
 
 /**
  * Escapes a CSV cell and neutralizes spreadsheet formula injection

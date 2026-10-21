@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { Database, Table2 } from "lucide-react";
 import { requireOrg } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db";

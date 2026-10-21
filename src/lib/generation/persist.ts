@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import type { SpreadsheetAnalysis } from "@/lib/spreadsheet/types";
 import type { SchemaSuggestion } from "@/lib/ai/types";
-import { FieldType } from "@prisma/client";
+import { FieldType } from "@/generated/prisma/client";
 
 export interface PersistSchemaOptions {
   orgId: string;

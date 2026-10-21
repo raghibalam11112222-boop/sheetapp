@@ -1,4 +1,4 @@
-import { Prisma, type GeneratedField } from "@prisma/client";
+import { Prisma, type GeneratedField } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 
 export type FilterOp =

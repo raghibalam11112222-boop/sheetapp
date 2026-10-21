@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { requireOrg, can } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db";
 import { SettingsView, type SettingsState } from "./settings-view";

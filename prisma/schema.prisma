@@ -2,12 +2,12 @@
 // Docs: trd.md §3 (core models), §4 (multi-tenancy), app.txt §26/§27
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ---------------------------------------------------------------------------

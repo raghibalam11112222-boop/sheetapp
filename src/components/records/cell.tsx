@@ -1,6 +1,6 @@
 import { Check, Minus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { GeneratedField } from "@prisma/client";
+import type { GeneratedField } from "@/generated/prisma/client";
 
 function formatNumber(value: number, type: string): string {
   if (type === "PERCENT") return `${value}%`;

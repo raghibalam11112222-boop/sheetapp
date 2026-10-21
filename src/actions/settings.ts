@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { withAction, ActionError } from "@/lib/action";
 import { requireActionOrg, requirePermissionOn, ACTIVE_ORG_COOKIE } from "@/lib/auth/guards";
-import { FieldType } from "@prisma/client";
+import { FieldType } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { deleteUploads } from "@/lib/storage";
 import { logAudit } from "@/lib/analytics/track";

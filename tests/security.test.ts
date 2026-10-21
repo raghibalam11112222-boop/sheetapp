@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { GeneratedField } from "@prisma/client";
+import type { GeneratedField } from "@/generated/prisma/client";
 import * as XLSX from "xlsx";
 import { escapeCsvCell, formatCompact, formatMoney, toCsv } from "@/lib/security/csv";
 import { toXlsx } from "@/lib/security/xlsx";
