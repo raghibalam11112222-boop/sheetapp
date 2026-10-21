@@ -40,7 +40,8 @@ host-provided preview domains); local dev unchanged.
 5. Execute F2 re-link plan (§4) against a staging DB copy — attach log.
 6. **Env swap (Production only):** set `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` +
    `CLERK_SECRET_KEY` to live values; set `PLATFORM_ADMIN_CLERK_IDS` to the new
-   prod-instance ID; rotate `DATABASE_URL` password (F10). Preview/Development
+   prod-instance ID; `DATABASE_URL` rotation already completed 2026-10-21 (F10 closed).
+   Preview/Development
    untouched. *Evidence: redacted env-diff pasted below.*
 7. Deploy (`npx vercel@latest --prod` from a commit at/after tag
    `pre-clerk-cutover`).

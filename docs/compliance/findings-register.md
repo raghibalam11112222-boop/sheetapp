@@ -43,11 +43,11 @@ Annex A, GDPR/PIPA technical safeguards)
 | F3 | HIGH | No git history: zero commits → no baseline, no rollback tag, no change-management trail (SOC 2 CC8.1 / ISO A.8.32) | **Remediated 2026-10-21** — initial commit + tag `pre-clerk-cutover` | App owner | git history; tag | At each cutover |
 | F4 | HIGH | Remediation evidence lived only in chat history (7-finding register, 53-check API pass, audit report not retained) | **OPEN (mitigating)** — this register + `docs/changes/CHG-001-clerk-prod-cutover.md` created 2026-10-21; CI artifacts start once a remote exists | App owner | This file; `.github/workflows/ci.yml` (lint→typecheck→test→build) | 2027-01-21 |
 | F5 | MEDIUM | `PLATFORM_ADMIN_CLERK_IDS` names a dev-instance user ID → `/admin` closes to everyone after cutover; literal ID was in `.env.example` | **OPEN (partially remediated)** — `.env.example` scrubbed to placeholder 2026-10-21; Vercel secret replacement sequenced in CHG-001 step 6 | App owner | `.env.example`; `guards.ts` fail-closed parsing | At cutover |
-| F6 | MEDIUM | No Content-Security-Policy; acceptance was a code comment only. **HSTS verified present 2026-10-21** in live responses (`max-age=63072000; includeSubDomains; preload`, Vercel edge) — repo config omits it, edge supplies it | **ACCEPTED (formalized here)** — CSP deferred; report-only CSP in backlog | App owner | Live header probe 2026-10-21; `next.config.ts` comment | 2027-01-21 |
+| F6 | MEDIUM | No Content-Security-Policy; acceptance was a code comment only. **HSTS verified present 2026-10-21** in live responses (`max-age=63072000; includeSubDomains; preload`, Vercel edge) — repo config omits it, edge supplies it | **PARTIALLY REMEDIATED** — report-only CSP deployed 2026-10-21 (probe: `Content-Security-Policy-Report-Only` served); enforce after shakedown window | App owner | Live header probes 2026-10-21 (HSTS + CSP); `next.config.ts` | 2027-01-21 |
 | F7 | MEDIUM | Rate limiting is per-serverless-instance (population ceiling ≈ 10 × N instances) | **ACCEPTED (formalized here)** — mitigation = Upstash/Redis before any SOC 2 Type II observation window | App owner | `src/lib/security/rate-limit.ts` comments | 2027-01-21 |
-| F8 | MEDIUM | Production npm advisories: **3 high** (`deepmerge-ts` via Prisma 6→7/8 chain, GHSA-ggr8-5vv4-36mx) — session-history claim of "8 high" was dev-inclusive | **OPEN** — ticket: Prisma 6→8 major upgrade; interim reachability analysis to be recorded on ticket | App owner | `npm audit --omit=dev` (re-run post-upgrade) | With upgrade |
+| F8 | MEDIUM | Production npm advisories: **3 high** (`deepmerge-ts` via Prisma 6 chain, GHSA-ggr8-5vv4-36mx) — session-history claim of "8 high" was dev-inclusive | **Remediated 2026-10-21** — Prisma 6.19.3 → **7.10.1** (stable; 8.x is RC-only) + non-breaking `npm audit fix` → `npm audit --omit=dev` **0 vulns** AND full `npm audit` **0 vulns**. Upgrade included: `prisma-client` generator (output `src/generated/prisma`), `@prisma/adapter-pg` driver adapter in `src/lib/db.ts`, root `prisma.config.ts`, build script now runs `prisma generate` | App owner | Post-upgrade `npm audit` output (0/0); gates: tsc0/lint0/101 tests/build0 | — |
 | F9 | MEDIUM | Cross-border personal-data flows (Supabase Seoul DB → Vercel Blob Singapore → Clerk US) with no documented transfer basis; applicability depends on KR/EU users being in scope | **OPEN** (privacy/legal workstream) | App owner (legal input) | Data-flow facts above; needs transfer basis or scoping statement | 2027-01-21 |
-| F10 | LOW | Credential hygiene: production `DATABASE_URL` password appeared in local session transcripts (not in repo files) | **OPEN** — rotate Supabase DB password at/after cutover | App owner | Supabase dashboard rotation | At cutover |
+| F10 | LOW | Credential hygiene: production `DATABASE_URL` password appeared in local session transcripts (not in repo files) | **Remediated 2026-10-21** — rotated via Management API `PATCH /v1/projects/{ref}/database/password` (never printed to transcript); Vercel Production + Preview env updated first (rollback snapshot taken); connect verified (Supavisor first-attempt retry quirk); confirmed by successful `prisma migrate deploy` on deployment `sheetapp-19fugy111` | App owner | This entry; deployment build log | — |
 
 ---
 
@@ -55,9 +55,8 @@ Annex A, GDPR/PIPA technical safeguards)
 
 | Risk | Acceptance | Owner | Review/expiry |
 |------|------------|-------|---------------|
-| No CSP | Interim; Next.js inline-script constraint noted; report-only CSP backlog | App owner | 2027-01-21 |
+| No CSP | Report-only deployed 2026-10-21; promote to enforce after shakedown window shows no unintended violations | App owner | 2027-01-21 |
 | Per-instance rate limits | Accepted until shared store (Upstash) lands | App owner | 2027-01-21 |
-| 3 high prod npm advisories (Prisma chain) | Accepted until scheduled major upgrade; reachability analysis required on ticket | App owner | With upgrade ticket |
 | Dev-instance auth in production (F1) | **Time-bound interim only** — valid solely until domain decision executes; not accepted for audit scopes | App owner | On domain decision |
 
 ---
