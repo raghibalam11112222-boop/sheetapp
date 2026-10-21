@@ -1,0 +1,1526 @@
+You are a senior SaaS product engineer, product designer, database architect, and security engineer.
+
+Build a production-quality SaaS called **SheetApp**.
+
+## PRODUCT
+
+SheetApp transforms business spreadsheets into usable internal business applications.
+
+Core promise:
+
+> **Turn the spreadsheet your business depends on into a real internal app.**
+
+A user uploads an Excel/CSV file. The system analyzes the spreadsheet, understands its structure, detects relationships and business fields, and generates a working internal application with:
+
+* Database
+* Dashboard
+* Tables
+* Search
+* Filters
+* CRUD operations
+* Forms
+* Basic permissions
+* AI-generated schema
+* Data validation
+* Basic workflows
+
+Do NOT position this as a generic AI app builder.
+
+The product is specifically for businesses that currently operate important workflows through Excel/Google Sheets.
+
+---
+
+# 1. PRODUCT PRINCIPLES
+
+The application must feel:
+
+* Premium
+* Minimal
+* Professional
+* Fast
+* Modern
+* Enterprise-quality
+* Extremely simple for non-technical SMB owners
+
+Avoid:
+
+* childish UI
+* excessive gradients
+* unnecessary animations
+* huge empty spaces
+* complicated dashboards
+* fake AI gimmicks
+* excessive glass effects
+* generic "AI startup" aesthetics
+
+Use subtle glassmorphism/liquid-glass elements only where they improve the interface.
+
+The product should feel closer to a polished modern SaaS product than a no-code builder.
+
+---
+
+# 2. TECH STACK
+
+Use:
+
+* Next.js
+* TypeScript
+* Tailwind CSS
+* PostgreSQL
+* Prisma ORM
+* Authentication
+* Server-side API routes/actions
+* Secure file processing
+* Excel/CSV parsing library
+* AI provider abstraction
+
+Keep the architecture modular so the AI provider can be replaced later.
+
+Do not hardcode API keys.
+
+All secrets must remain server-side.
+
+Create:
+
+.env.example
+
+with all required environment variables.
+
+---
+
+# 3. MAIN USER FLOW
+
+The complete flow should be:
+
+Landing Page
+↓
+Sign Up / Login
+↓
+Onboarding
+↓
+Upload Spreadsheet
+↓
+Spreadsheet Analysis
+↓
+AI Understanding
+↓
+Schema Preview
+↓
+User Confirmation
+↓
+Generate App
+↓
+Generated Dashboard
+↓
+Manage Data
+↓
+Create/Edit/Delete Records
+↓
+Invite Team Members
+↓
+Manage Permissions
+↓
+Settings
+
+---
+
+# 4. LANDING PAGE
+
+Build a premium conversion-focused landing page.
+
+Hero:
+
+Headline:
+
+> Turn the spreadsheet your business depends on into a real internal app.
+
+Subheadline:
+
+> Upload your Excel or CSV file. SheetApp turns your messy spreadsheet into a structured database, dashboard, forms, and workflows — without rebuilding your business from scratch.
+
+Primary CTA:
+
+> Upload a Spreadsheet
+
+Secondary CTA:
+
+> See How It Works
+
+Hero visual:
+
+Show a spreadsheet transforming into a polished internal business dashboard.
+
+Use a clear visual transition:
+
+Spreadsheet
+→
+AI Analysis
+→
+Business App
+
+---
+
+## Landing page sections
+
+### Navigation
+
+Logo:
+
+SheetApp
+
+Links:
+
+* Product
+* How it works
+* Use cases
+* Pricing
+* Sign in
+
+CTA:
+
+Get Started
+
+---
+
+### Hero
+
+Include:
+
+* headline
+* subheadline
+* CTA
+* secondary CTA
+* product preview
+
+---
+
+### Problem section
+
+Headline:
+
+> Your spreadsheet wasn't built to run your business.
+
+Show problems:
+
+* Broken formulas
+* Duplicate records
+* Accidental edits
+* Outdated versions
+* No permissions
+* No proper workflows
+* Difficult reporting
+
+---
+
+### Transformation section
+
+Show:
+
+BEFORE
+
+Excel / Google Sheets
+
+AFTER
+
+SheetApp
+
+Example:
+
+Customers.xlsx
+
+↓
+
+Customers App
+
+with:
+
+* Search
+* Filters
+* Customer profiles
+* Add customer
+* Edit customer
+* Status
+* Revenue
+* Activity
+
+---
+
+### How it works
+
+Three steps:
+
+01 — Upload
+
+Upload Excel or CSV.
+
+02 — Understand
+
+AI identifies tables, fields, relationships, duplicates, and business logic.
+
+03 — Generate
+
+Get a working internal application.
+
+---
+
+### Use cases
+
+Cards:
+
+* Customer Management
+* Inventory
+* Orders
+* Projects
+* Employees
+* Operations
+
+---
+
+### AI intelligence section
+
+Explain:
+
+> SheetApp doesn't just import cells.
+
+It understands:
+
+* field types
+* relationships
+* duplicate records
+* statuses
+* formulas
+* references
+* business entities
+
+---
+
+### Pricing
+
+Create:
+
+Starter — $29/month
+
+Business — $79/month
+
+Pro — $149/month
+
+For MVP, payments can be mocked if payment integration isn't configured.
+
+---
+
+### Final CTA
+
+> Your spreadsheet already contains your business logic.
+
+> Give it a better interface.
+
+CTA:
+
+Build My App
+
+---
+
+# 5. AUTHENTICATION
+
+Implement:
+
+* Sign up
+* Login
+* Logout
+* Password reset
+* Protected dashboard routes
+
+After registration:
+
+send user to onboarding.
+
+Never expose authentication secrets in client-side code.
+
+---
+
+# 6. ONBOARDING
+
+After login:
+
+Screen:
+
+> Let's turn your spreadsheet into an app.
+
+Ask:
+
+### What does your business use this spreadsheet for?
+
+Options:
+
+* Customers
+* Inventory
+* Orders
+* Projects
+* Employees
+* Finance
+* Other
+
+Allow:
+
+> I'll let AI figure it out.
+
+Then:
+
+Upload spreadsheet.
+
+Supported:
+
+* .xlsx
+* .xls
+* .csv
+
+Show:
+
+* file name
+* size
+* number of sheets
+
+---
+
+# 7. SPREADSHEET ANALYSIS ENGINE
+
+This is the core feature.
+
+When the user uploads a spreadsheet:
+
+First parse it server-side.
+
+Extract:
+
+* sheet names
+* columns
+* row count
+* column values
+* data types
+* formulas
+* empty columns
+* duplicate rows
+* potential IDs
+* relationships
+* status fields
+* date fields
+* currency fields
+* email fields
+* phone fields
+
+Do NOT blindly send entire sensitive spreadsheets to an AI provider.
+
+Create a structured analysis representation.
+
+Example:
+
+{
+"sheet": "Customers",
+"columns": [
+{
+"name": "Customer ID",
+"type": "identifier"
+},
+{
+"name": "Company",
+"type": "text"
+},
+{
+"name": "Revenue",
+"type": "currency"
+},
+{
+"name": "Status",
+"type": "enum"
+}
+]
+}
+
+Use AI to infer business meaning from the structured metadata and representative/sample data.
+
+---
+
+# 8. AI SCHEMA GENERATION
+
+After analysis, show:
+
+> We found 3 business entities.
+
+Example:
+
+Customers
+Orders
+Products
+
+Then show relationships:
+
+Customers
+↓
+Orders
+↓
+Products
+
+AI should generate a normalized schema where appropriate.
+
+Example:
+
+Customer:
+
+* id
+* name
+* company
+* email
+* phone
+* status
+* createdAt
+
+Order:
+
+* id
+* customerId
+* productId
+* quantity
+* amount
+* status
+* createdAt
+
+Product:
+
+* id
+* name
+* sku
+* price
+* stock
+
+---
+
+# 9. SCHEMA REVIEW SCREEN
+
+Before generating the application, show the user what was detected.
+
+Header:
+
+> We understood your spreadsheet.
+
+Show:
+
+### Tables
+
+Customers
+Orders
+Products
+
+Allow:
+
+* rename
+* remove
+* add field
+* change field type
+* mark required
+* mark unique
+* configure relationships
+
+CTA:
+
+> Generate My App
+
+---
+
+# 10. GENERATED APP
+
+After clicking Generate My App:
+
+Show a generation progress UI.
+
+Stages:
+
+Analyzing data
+✓
+
+Building database
+✓
+
+Creating tables
+✓
+
+Generating forms
+✓
+
+Creating dashboard
+✓
+
+Importing records
+✓
+
+Finalizing app
+✓
+
+Then redirect to:
+
+`/dashboard`
+
+---
+
+# 11. DASHBOARD
+
+Create a professional SaaS dashboard.
+
+Sidebar:
+
+Dashboard
+
+Apps
+
+Data
+
+Workflows
+
+Team
+
+Settings
+
+Bottom:
+
+User profile
+
+Main area:
+
+> Good morning, {name}
+
+Show:
+
+* Total records
+* Active customers
+* Orders
+* Revenue
+* Recent activity
+
+The dashboard must dynamically adapt to the generated application.
+
+Do NOT hardcode only "Customers".
+
+If the uploaded spreadsheet is inventory-related, the dashboard should reflect inventory.
+
+---
+
+# 12. GENERATED TABLES
+
+Every generated entity gets a table.
+
+Example:
+
+CUSTOMERS
+
+Top controls:
+
+* Add Customer
+
+Search
+
+Filter
+
+Sort
+
+Export
+
+Table:
+
+Customer
+Company
+Status
+Revenue
+Created
+Actions
+
+Actions:
+
+View
+Edit
+Delete
+
+---
+
+# 13. GENERATED FORMS
+
+Forms should be automatically generated from the schema.
+
+Example:
+
+Add Customer
+
+Name
+Company
+Email
+Phone
+Status
+Revenue
+
+Buttons:
+
+Cancel
+
+Create Customer
+
+Validation must happen on both:
+
+Client
+
+AND
+
+Server.
+
+---
+
+# 14. RECORD DETAIL PAGE
+
+Clicking a record opens a detail page.
+
+Example:
+
+Customer
+
+John Smith
+
+Acme Inc.
+
+Status: Active
+
+Revenue:
+
+$12,400
+
+Email:
+
+[john@example.com](mailto:john@example.com)
+
+Sections:
+
+Overview
+Orders
+Activity
+
+Actions:
+
+Edit
+
+Delete
+
+---
+
+# 15. SEARCH + FILTERING
+
+Every generated table should support:
+
+* Full-text search
+* Column filtering
+* Sorting
+* Pagination
+* Date filtering
+* Status filtering
+
+Do not load thousands of records into the browser unnecessarily.
+
+Use server-side pagination.
+
+---
+
+# 16. DATA IMPORT
+
+Import spreadsheet records into PostgreSQL.
+
+Handle:
+
+* empty values
+* duplicate IDs
+* invalid types
+* malformed emails
+* invalid dates
+* currency formatting
+
+Before import show:
+
+> We found 14 issues.
+
+Example:
+
+3 duplicate customers
+7 missing emails
+4 invalid dates
+
+Allow:
+
+Fix automatically
+
+Skip problematic rows
+
+Import anyway
+
+---
+
+# 17. DUPLICATE DETECTION
+
+Detect likely duplicates.
+
+Example:
+
+John Smith
+john smith
+John  Smith
+
+or:
+
+Acme Inc.
+ACME INC
+Acme Incorporated
+
+Show:
+
+> Potential duplicates found.
+
+Allow:
+
+Merge
+
+Keep separate
+
+Ignore
+
+---
+
+# 18. SPREADSHEET QUALITY AUDIT
+
+This is an important differentiator.
+
+Before generating the app, show:
+
+## Spreadsheet Health
+
+Score should NOT be presented as a subjective business-quality rating; instead show concrete findings.
+
+Example:
+
+Duplicates:
+12
+
+Inconsistent statuses:
+4
+
+Missing required fields:
+27
+
+Broken formulas:
+3
+
+Unused columns:
+8
+
+Show exact affected columns/rows where possible.
+
+---
+
+# 19. PERMISSIONS
+
+Implement basic roles:
+
+Admin
+
+Manager
+
+Member
+
+Viewer
+
+Example:
+
+Admin:
+Everything
+
+Manager:
+Create/Edit/View
+
+Member:
+View/Create/Edit assigned records
+
+Viewer:
+Read-only
+
+Permission checks must be enforced server-side.
+
+Never rely only on frontend hiding buttons.
+
+---
+
+# 20. TEAM INVITATIONS
+
+Allow the owner to invite team members.
+
+Team screen:
+
+Members
+
+Name
+Email
+Role
+Status
+
+Actions:
+
+Change role
+
+Remove
+
+Resend invitation
+
+---
+
+# 21. WORKFLOWS
+
+For MVP, create a lightweight workflow system.
+
+Example:
+
+WHEN:
+
+Order status becomes "Completed"
+
+THEN:
+
+Update inventory
+
+OR
+
+Create task
+
+OR
+
+Send notification
+
+Keep this simple.
+
+Do not build a complicated Zapier clone.
+
+---
+
+# 22. GOOGLE SHEETS
+
+Design the architecture so Google Sheets can be added later.
+
+For MVP:
+
+Support Excel/CSV first.
+
+Create a clear placeholder:
+
+> Connect Google Sheets
+
+Show:
+
+Coming soon
+
+Do not implement fake functionality.
+
+---
+
+# 23. EXPORT
+
+Allow users to export data back to:
+
+CSV
+
+Excel
+
+This helps users trust the product because they are never locked in.
+
+---
+
+# 24. SETTINGS
+
+Settings sections:
+
+General
+
+Workspace
+
+Members
+
+Permissions
+
+Data
+
+Billing
+
+Security
+
+---
+
+# 25. SECURITY
+
+Perform a security-first implementation.
+
+Requirements:
+
+* Server-side validation
+* Authentication on protected routes
+* Authorization checks
+* Secure database queries
+* Rate limiting on expensive endpoints
+* File type validation
+* File size limits
+* Malware-safe file handling where applicable
+* Never execute uploaded spreadsheet formulas
+* Prevent formula injection on export
+* Sanitize user-generated content
+* Prevent SQL injection through ORM
+* Protect against XSS
+* CSRF protection where applicable
+* No secrets in frontend
+* Secure error messages
+* Audit sensitive operations
+
+Uploaded spreadsheets are untrusted input.
+
+Treat them as malicious until validated.
+
+---
+
+# 26. DATABASE ARCHITECTURE
+
+Design the database around:
+
+Users
+
+Organizations
+
+Memberships
+
+Applications
+
+DataSources
+
+Tables
+
+Fields
+
+Records
+
+Relationships
+
+Workflows
+
+WorkflowRuns
+
+Invitations
+
+AuditLogs
+
+Subscriptions
+
+The generated application should be data-driven rather than requiring custom code for every uploaded spreadsheet.
+
+---
+
+# 27. MULTI-TENANCY
+
+This is mandatory.
+
+Every organization must be isolated.
+
+User A must never be able to access:
+
+User B's
+
+* applications
+* records
+* files
+* team
+* settings
+
+Every query must be scoped to the authenticated organization.
+
+---
+
+# 28. RESPONSIVE DESIGN
+
+Desktop-first because this is an internal business application.
+
+But support:
+
+* laptop
+* tablet
+* mobile
+
+The generated data tables should remain usable on smaller screens.
+
+---
+
+# 29. UI DESIGN SYSTEM
+
+Use:
+
+* clean typography
+* 8px spacing system
+* consistent border radius
+* subtle shadows
+* restrained colors
+* high-quality empty states
+* skeleton loading
+* polished hover states
+* keyboard-friendly forms
+
+Use a neutral professional palette.
+
+Do not randomly change colors between pages.
+
+Create reusable:
+
+Button
+
+Input
+
+Select
+
+Modal
+
+Dropdown
+
+Table
+
+Badge
+
+Card
+
+Sidebar
+
+Dialog
+
+Toast
+
+Form
+
+Tabs
+
+Pagination
+
+---
+
+# 30. EMPTY STATES
+
+Every empty state should explain what to do.
+
+Example:
+
+No applications yet.
+
+> Upload your first spreadsheet and we'll turn it into an internal app.
+
+Button:
+
+Upload Spreadsheet
+
+---
+
+# 31. ERROR HANDLING
+
+Never show raw stack traces.
+
+Use clear messages.
+
+Example:
+
+Instead of:
+
+"PrismaClientKnownRequestError..."
+
+Show:
+
+> We couldn't save this record. Please try again.
+
+Log the technical error server-side.
+
+---
+
+# 32. LOADING STATES
+
+Create proper:
+
+* skeletons
+* upload progress
+* AI processing states
+* database generation states
+* table loading
+* form submission states
+
+Never leave the user staring at a blank screen.
+
+---
+
+# 33. DEMO DATA
+
+Create an optional demo workspace.
+
+Example:
+
+Acme Operations
+
+with:
+
+Customers
+
+Orders
+
+Products
+
+Employees
+
+Projects
+
+This allows visitors to understand the product without uploading their own spreadsheet.
+
+---
+
+# 34. ANALYTICS
+
+Track product events:
+
+* signup
+* spreadsheet_uploaded
+* analysis_completed
+* schema_generated
+* app_generated
+* record_created
+* record_updated
+* record_deleted
+* team_invited
+* subscription_started
+
+Do not collect unnecessary personal data.
+
+---
+
+# 35. BILLING ARCHITECTURE
+
+Create subscription architecture for:
+
+Starter
+
+Business
+
+Pro
+
+For development, billing may use mock mode.
+
+Keep payment provider integration isolated so Stripe can be added cleanly.
+
+Do not expose payment secrets.
+
+---
+
+# 36. ADMIN / DEBUGGING
+
+Create a protected admin/debugging area for development.
+
+Show:
+
+* users
+* organizations
+* uploaded files
+* generation jobs
+* errors
+* AI usage
+* system health
+
+Only accessible to authorized administrators.
+
+---
+
+# 37. PERFORMANCE
+
+Optimize:
+
+* database queries
+* pagination
+* file processing
+* AI calls
+* generated dashboards
+
+Do not send unnecessary spreadsheet data to the browser.
+
+Use background jobs/queues later for large spreadsheet processing.
+
+For MVP, implement a clean abstraction so background processing can be added without rewriting the architecture.
+
+---
+
+# 38. AI FAILURE HANDLING
+
+Never assume AI output is correct.
+
+AI-generated schemas must be validated against deterministic spreadsheet analysis.
+
+If AI returns invalid JSON:
+
+Retry / repair / fallback.
+
+If AI produces an invalid field type:
+
+Use deterministic inference.
+
+AI should assist the system, not control the entire system.
+
+---
+
+# 39. IMPORTANT PRODUCT BEHAVIOR
+
+The application must never pretend that an AI-generated app is perfect.
+
+Before generation:
+
+Show what was detected.
+
+After generation:
+
+Allow editing.
+
+Users must always be able to:
+
+* rename fields
+* change field types
+* modify forms
+* delete records
+* add fields
+* modify relationships
+
+---
+
+# 40. MVP PRIORITY
+
+If implementation time becomes limited, prioritize exactly in this order:
+
+1. Authentication
+2. Spreadsheet upload
+3. Spreadsheet parser
+4. Spreadsheet analysis
+5. AI schema generation
+6. Schema review
+7. PostgreSQL database generation
+8. CRUD
+9. Generated dashboard
+10. Search/filter
+11. Basic permissions
+12. Team management
+13. Billing
+14. Workflows
+15. Google Sheets
+
+Do NOT spend excessive time on marketing animations before the core workflow works.
+
+---
+
+# 41. DEVELOPMENT REQUIREMENTS
+
+Before writing code:
+
+Inspect the existing project.
+
+If code already exists:
+
+DO NOT rebuild the project unnecessarily.
+
+Preserve:
+
+* existing theme
+* existing working components
+* existing functionality
+* existing environment configuration
+
+Only modify what is necessary.
+
+If something is missing, add it.
+
+If something is broken, fix it.
+
+Do not replace functioning architecture just because you prefer another approach.
+
+---
+
+# 42. CODE QUALITY
+
+Use:
+
+* TypeScript strict mode
+* reusable components
+* clean folder structure
+* typed API responses
+* schema validation
+* centralized error handling
+* reusable database utilities
+* reusable authentication utilities
+
+Avoid:
+
+* giant components
+* duplicated logic
+* hardcoded demo data inside production logic
+* fake buttons
+* TODO placeholders for core functionality
+* console.log debugging left in production
+
+---
+
+# 43. TESTING
+
+Test the complete critical path:
+
+Create account
+
+↓
+
+Upload XLSX
+
+↓
+
+Analyze
+
+↓
+
+Generate schema
+
+↓
+
+Confirm schema
+
+↓
+
+Generate application
+
+↓
+
+View dashboard
+
+↓
+
+Create record
+
+↓
+
+Edit record
+
+↓
+
+Delete record
+
+↓
+
+Search record
+
+↓
+
+Invite team member
+
+↓
+
+Change permission
+
+↓
+
+Logout
+
+↓
+
+Login again
+
+All protected routes must remain protected.
+
+---
+
+# 44. FINAL QUALITY AUDIT
+
+Before declaring the project complete, perform a full audit.
+
+Check:
+
+### UI
+
+Every page is responsive.
+
+### Functionality
+
+Every visible button does something meaningful.
+
+### Authentication
+
+Unauthorized users cannot access protected pages.
+
+### Database
+
+No cross-organization data leaks.
+
+### Uploads
+
+Invalid files are rejected safely.
+
+### AI
+
+Invalid responses don't crash the application.
+
+### Forms
+
+Validation works client + server.
+
+### Tables
+
+Pagination/search/filter work.
+
+### Security
+
+No secrets exposed.
+
+### Errors
+
+No raw technical errors shown to users.
+
+### Performance
+
+No unnecessary data fetching.
+
+### Production
+
+Build passes successfully.
+
+Run:
+
+npm run lint
+
+npm run build
+
+and fix every error.
+
+---
+
+# 45. MOST IMPORTANT RULE
+
+Do not build this as a fake frontend prototype.
+
+The application must actually work.
+
+A user should be able to take:
+
+Customers.xlsx
+
+upload it,
+
+have the system analyze it,
+
+generate the schema,
+
+create the database,
+
+import the records,
+
+and receive a functional Customers application.
+
+The core demo should genuinely work end-to-end.
+
+Build the smallest production-quality version first, then expand.
+
+Start by inspecting the repository and determining what already exists. Then implement the product systematically without destroying existing working functionality.

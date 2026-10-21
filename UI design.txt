@@ -1,0 +1,414 @@
+# SheetApp — UI/UX Design
+
+## 1. Design Direction
+
+Style:
+
+**Minimal + Premium + Professional**
+
+Visual references:
+
+* Modern SaaS
+* Subtle glassmorphism
+* Clean enterprise software
+* Apple-like simplicity
+
+Avoid:
+
+* Excessive gradients
+* Neon colors
+* Huge typography
+* Over-animation
+* Clutter
+* Generic AI-dashboard appearance
+
+## 2. Color System
+
+Use a neutral foundation.
+
+```text
+Background:        #F8F9FA
+Surface:            #FFFFFF
+Primary Text:       #111111
+Secondary Text:     #6B7280
+Border:             #E5E7EB
+Primary Action:     #111111
+Success:            #16A34A
+Warning:            #D97706
+Danger:             #DC2626
+```
+
+Dark mode can be added later.
+
+## 3. Typography
+
+Use:
+
+**Inter**
+
+Hierarchy:
+
+```text
+H1: 48–64px
+H2: 32–40px
+H3: 24px
+Body: 15–16px
+Small: 13–14px
+```
+
+Keep typography clean and restrained.
+
+## 4. Landing Page
+
+### Navigation
+
+```text
+SheetApp
+
+Product   How it works   Use cases   Pricing
+
+                    Sign in   Get Started
+```
+
+Minimal navigation.
+
+### Hero
+
+Headline:
+
+> Turn the spreadsheet your business depends on into a real internal app.
+
+Subheadline:
+
+> Upload your spreadsheet and get a database, dashboard, forms, and permissions automatically.
+
+Buttons:
+
+**Upload Spreadsheet**
+
+**See how it works**
+
+Hero visual:
+
+```text
+┌─────────────────┐
+│ Customers.xlsx  │
+│                 │
+│ 50 columns      │
+│ 2,431 rows      │
+└────────┬────────┘
+         ↓
+     AI Analysis
+         ↓
+┌────────────────────────┐
+│ Customers              │
+│ Orders                 │
+│ Inventory              │
+│ Dashboard              │
+└────────────────────────┘
+```
+
+## 5. Authentication
+
+Simple centered card.
+
+```text
+Welcome to SheetApp
+
+Email
+[________________]
+
+Password
+[________________]
+
+[ Continue ]
+
+──────── OR ────────
+
+Continue with Google
+
+Already have an account?
+Sign in
+```
+
+Do not clutter the page.
+
+## 6. Onboarding
+
+### Step 1
+
+```text
+Let's build your app.
+
+What do you use this spreadsheet for?
+
+○ Customers
+○ Inventory
+○ Orders
+○ Projects
+○ Employees
+○ Other
+
+[ Continue ]
+```
+
+### Step 2
+
+Upload:
+
+```text
+┌──────────────────────────────┐
+│                              │
+│       Upload spreadsheet     │
+│                              │
+│ Drag & drop or browse        │
+│                              │
+│ XLSX · XLS · CSV             │
+│                              │
+└──────────────────────────────┘
+```
+
+## 7. Analysis Screen
+
+Show progress:
+
+```text
+Analyzing Customers.xlsx
+
+✓ Reading spreadsheet
+✓ Detecting columns
+✓ Identifying data types
+● Finding relationships
+○ Checking duplicates
+```
+
+Use subtle animation only.
+
+## 8. Schema Review
+
+Header:
+
+> We understood your spreadsheet.
+
+Show entity cards:
+
+```text
+CUSTOMERS
+24 fields
+2,431 records
+
+ORDERS
+12 fields
+8,293 records
+
+PRODUCTS
+9 fields
+421 records
+```
+
+Relationship visualization:
+
+```text
+Customers
+    │
+    ▼
+  Orders
+    │
+    ▼
+ Products
+```
+
+CTA:
+
+**Generate My App**
+
+## 9. Dashboard
+
+Layout:
+
+```text
+┌────────────┬─────────────────────────────┐
+│ SheetApp   │                             │
+│            │ Good morning, John          │
+│ Dashboard  │                             │
+│ Apps       │ ┌─────┐ ┌─────┐ ┌─────┐   │
+│ Data       │ │2,431│ │8,293│ │$84K │   │
+│ Workflows  │ └─────┘ └─────┘ └─────┘   │
+│ Team       │                             │
+│ Settings   │ Recent activity             │
+│            │                             │
+│            │ Customer table              │
+└────────────┴─────────────────────────────┘
+```
+
+## 10. Data Table
+
+Example:
+
+```text
+Customers
+
+[ Search customers... ] [Filter] [Sort] [+ Add]
+
+┌───────────┬──────────┬────────┬──────────┐
+│ Customer  │ Company  │ Status │ Revenue  │
+├───────────┼──────────┼────────┼──────────┤
+│ John Smith│ Acme     │ Active │ $12,400  │
+│ Sarah Lee │ Nova     │ Active │ $8,200   │
+└───────────┴──────────┴────────┴──────────┘
+```
+
+Use compact rows.
+
+## 11. Record Detail
+
+```text
+← Customers
+
+John Smith
+Acme Inc.
+
+[Edit] [Delete]
+
+Overview
+────────────────
+
+Email
+john@example.com
+
+Phone
++1 ...
+
+Revenue
+$12,400
+
+Status
+Active
+
+Orders
+────────────────
+Order #1023
+Order #1042
+```
+
+## 12. Forms
+
+Forms should use a two-column layout on desktop.
+
+```text
+Add Customer
+
+Name                  Company
+[____________]        [____________]
+
+Email                 Phone
+[____________]        [____________]
+
+Status                Revenue
+[____________]        [____________]
+
+                 [Cancel] [Create]
+```
+
+## 13. Team
+
+```text
+Team
+
+[+ Invite member]
+
+Name       Email             Role
+John       john@...          Admin
+Sarah      sarah@...         Manager
+Mike       mike@...          Viewer
+```
+
+## 14. Responsive Design
+
+Desktop:
+
+* Persistent sidebar
+* Large tables
+
+Tablet:
+
+* Collapsible sidebar
+
+Mobile:
+
+* Bottom navigation or compact sidebar
+* Horizontal table scrolling
+* Stacked forms
+
+## 15. Components
+
+Create a consistent component library:
+
+* Button
+* Input
+* Select
+* Card
+* Table
+* Badge
+* Modal
+* Dialog
+* Toast
+* Dropdown
+* Sidebar
+* Tabs
+* Pagination
+* EmptyState
+* LoadingSkeleton
+
+## 16. UX Principles
+
+### Progressive disclosure
+
+Don't show advanced functionality until needed.
+
+### Clear actions
+
+Primary actions should always be obvious.
+
+### Feedback
+
+Every important action should provide feedback.
+
+### Safety
+
+Destructive actions require confirmation.
+
+### Trust
+
+Always show what the AI detected before creating the application.
+
+### Simplicity
+
+The user should never need to understand:
+
+* databases
+* schemas
+* APIs
+* SQL
+
+The product should handle that complexity.
+
+## 17. Core UX Goal
+
+A first-time user should be able to go from:
+
+```text
+"I have an Excel file"
+```
+
+to:
+
+```text
+"I have a working business application"
+```
+
+with as little friction as possible.
+
+Target:
+
+**Upload → Review → Generate → Use**

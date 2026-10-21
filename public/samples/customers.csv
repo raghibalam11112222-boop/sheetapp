@@ -1,0 +1,13 @@
+Customer,Company,Email,Phone,Status,Revenue
+John Smith,Acme Inc.,john.smith@acme.co,+1 555 014 2288,Active,12400
+Sarah Lee,Nova Ltd,sarah.lee@nova.io,+1 555 019 3341,Active,8200
+Omar Diaz,Zenith Corp,omar.diaz@zenith.co,,Pending,18900
+Priya Nair,Acme Inc.,priya.nair@acme.co,+1 555 011 9074,Active,5400
+Tom Becker,Becker & Co,tom.becker@becker.co,+1 555 017 6620,Inactive,1200
+Aisha Khan,Nova Ltd,aisha.khan@nova.io,+1 555 013 5589,Active,9750
+Leo Martin,Zenith Corp,leo.martin@zenith.co,+1 555 016 4412,Pending,3300
+Grace Liu,Halcyon LLC,grace.liu@halcyon.co,,Active,14100
+Sam Wilson,Acme Inc.,sam.wilson@acme.co,+1 555 012 7834,Active,6800
+Nina Petrova,Vostok Ltd,nina.petrova@vostok.co,+1 555 018 2291,Inactive,900
+Carlos Ruiz,Halcyon LLC,carlos.ruiz@halcyon.co,+1 555 015 1106,Active,11250
+Mia Chen,Nova Ltd,mia.chen@nova.io,+1 555 010 9943,Pending,4700

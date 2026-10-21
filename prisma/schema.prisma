@@ -1,0 +1,522 @@
+// SheetApp Prisma schema
+// Docs: trd.md §3 (core models), §4 (multi-tenancy), app.txt §26/§27
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Auth core tables (better-auth is the identity provider)
+// ---------------------------------------------------------------------------
+
+model user {
+  id            String   @id @default(uuid())
+  clerkId       String?  @unique
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions        session[]
+  accounts        account[]
+  memberships     Membership[]
+  invitationsSent Invitation[]     @relation("InvitedBy")
+  auditLogs       AuditLog[]
+  analyticsEvents AnalyticsEvent[]
+  recordsCreated  Record[]         @relation("RecordCreator")
+  dataSources     DataSource[]
+
+  @@map("user")
+}
+
+model session {
+  id        String   @id @default(uuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+
+  user user @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model account {
+  id                   String    @id @default(uuid())
+  providerId           String
+  userId               String
+  accountId            String
+  accessToken          String?
+  refreshToken         String?
+  idToken              String?
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  password             String?
+  scope                String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user user @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("account")
+}
+
+model verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
+// ---------------------------------------------------------------------------
+// Tenancy
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  MANAGER
+  MEMBER
+  VIEWER
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships      Membership[]
+  applications     Application[]
+  dataSources      DataSource[]
+  invitations      Invitation[]
+  auditLogs        AuditLog[]
+  subscriptions    Subscription[]
+  analyticsEvents  AnalyticsEvent[]
+  workflows        Workflow[]
+  workflowRuns     WorkflowRun[]
+  records          Record[]
+  notifications    Notification[]
+  duplicateDecisions DuplicateDecision[]
+
+  @@index([slug])
+  @@map("organization")
+}
+
+model Membership {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  role           Role     @default(ADMIN)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         user         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("membership")
+}
+
+model Invitation {
+  id             String           @id @default(cuid())
+  organizationId String
+  email          String
+  role           Role             @default(MEMBER)
+  token          String           @unique
+  status         String           @default("PENDING")
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  invitedById    String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    user         @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, email])
+  @@index([invitedById])
+  @@map("invitation")
+}
+
+// ---------------------------------------------------------------------------
+// Generated application metadata
+// ---------------------------------------------------------------------------
+
+enum ApplicationStatus {
+  DRAFT
+  GENERATING
+  READY
+  FAILED
+}
+
+model Application {
+  id             String            @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  status         ApplicationStatus @default(DRAFT)
+  primaryTableId String?
+  sourcePrompt   String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  dataSource    DataSource?
+  tables        GeneratedTable[]
+  relationships Relationship[]
+  workflows     Workflow[]
+
+  @@index([organizationId])
+  @@map("application")
+}
+
+enum DataSourceStatus {
+  UPLOADED
+  ANALYZED
+  SCHEMA_READY
+  IMPORTING
+  IMPORTED
+  FAILED
+}
+
+model DataSource {
+  id             String           @id @default(cuid())
+  organizationId String
+  applicationId  String?          @unique
+  fileName       String
+  fileSize       Int
+  fileKind       String
+  storagePath    String
+  sheetCount     Int              @default(0)
+  rowCount       Int              @default(0)
+  columnCount    Int              @default(0)
+  status         DataSourceStatus @default(UPLOADED)
+  analysis       Json?
+  importReport   Json?
+  error          String?
+  uploadedById   String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  application  Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  uploadedBy   user         @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([uploadedById])
+  @@map("data_source")
+}
+
+enum FieldType {
+  TEXT
+  LONG_TEXT
+  NUMBER
+  CURRENCY
+  PERCENT
+  DATE
+  DATETIME
+  BOOLEAN
+  ENUM
+  EMAIL
+  PHONE
+  URL
+  RELATION
+  IDENTIFIER
+}
+
+model GeneratedTable {
+  id             String   @id @default(cuid())
+  applicationId  String
+  organizationId String
+  name           String
+  pluralName     String
+  label          String
+  description    String?
+  sourceSheet    String?
+  position       Int      @default(0)
+  isJunction     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  application Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fields      GeneratedField[]
+  records     Record[]
+  duplicateDecisions DuplicateDecision[]
+  relationshipsFrom Relationship[] @relation("RelFrom")
+  relationshipsTo   Relationship[] @relation("RelTo")
+
+  @@index([applicationId])
+  @@index([organizationId])
+  @@map("generated_table")
+}
+
+model GeneratedField {
+  id           String    @id @default(cuid())
+  tableId      String
+  organizationId String
+  name         String
+  label        String
+  type         FieldType @default(TEXT)
+  required     Boolean   @default(false)
+  unique       Boolean   @default(false)
+  searchable   Boolean   @default(true)
+  sortable     Boolean   @default(true)
+  isTitle      Boolean   @default(false)
+  position     Int       @default(0)
+  defaultValue String?
+  options      String[]
+  helpText     String?
+  constraints  Json?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  table GeneratedTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([tableId, name])
+  @@index([tableId])
+  @@map("generated_field")
+}
+
+enum RelationshipType {
+  ONE_TO_MANY
+  MANY_TO_ONE
+}
+
+enum DuplicateDecisionType {
+  KEPT_SEPARATE
+  IGNORED
+}
+
+model Relationship {
+  id             String           @id @default(cuid())
+  applicationId  String
+  organizationId String
+  fromTableId    String
+  fromFieldId    String
+  toTableId      String
+  type           RelationshipType @default(ONE_TO_MANY)
+  label          String?
+  confirmed      Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+
+  application Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fromTable   GeneratedTable @relation("RelFrom", fields: [fromTableId], references: [id], onDelete: Cascade)
+  toTable     GeneratedTable @relation("RelTo", fields: [toTableId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([fromTableId])
+  @@index([toTableId])
+  @@map("relationship")
+}
+
+// ---------------------------------------------------------------------------
+// Data records (JSONB data plane — metadata driven)
+// ---------------------------------------------------------------------------
+
+model DuplicateDecision {
+  id             String   @id @default(cuid())
+  organizationId String
+  tableId        String
+  /// Normalized duplicate key (see normalizeDuplicateKey).
+  key            String
+  decision       DuplicateDecisionType
+  createdAt      DateTime @default(now())
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  table        GeneratedTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, tableId, key])
+  @@index([tableId])
+  @@map("duplicate_decision")
+}
+
+model Record {
+  id             String   @id @default(cuid())
+  organizationId String
+  applicationId  String
+  tableId        String
+  data           Json
+  createdById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  table        GeneratedTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  createdBy    user?          @relation("RecordCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([tableId, createdAt])
+  @@index([applicationId])
+  @@index([organizationId])
+  @@index([createdById])
+  @@map("record")
+}
+
+// ---------------------------------------------------------------------------
+// Team & security
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  actorUserId    String?
+  action         String
+  entityType     String?
+  entityId       String?
+  metadata       Json?
+  ipAddress      String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actor        user?        @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([actorUserId])
+  @@map("audit_log")
+}
+
+model AnalyticsEvent {
+  id             String   @id @default(cuid())
+  organizationId String?
+  userId         String?
+  name           String
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         user?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([name, createdAt])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("analytics_event")
+}
+
+model ErrorLog {
+  id        String   @id @default(cuid())
+  level     String   @default("error")
+  message   String
+  stack     String?
+  context   Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("error_log")
+}
+
+model Notification {
+  id             String   @id @default(cuid())
+  organizationId String
+  title          String
+  body           String?
+  readAt         DateTime?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@map("notification")
+}
+
+// ---------------------------------------------------------------------------
+// Workflows
+// ---------------------------------------------------------------------------
+
+enum WorkflowAction {
+  SET_FIELD
+  NOTIFY
+  CREATE_RECORD
+}
+
+model Workflow {
+  id             String           @id @default(cuid())
+  organizationId String
+  applicationId  String
+  name           String
+  enabled        Boolean          @default(true)
+  triggerTableId String
+  triggerFieldId String
+  triggerValue   String
+  action         WorkflowAction   @default(SET_FIELD)
+  actionTableId  String?
+  actionFieldId  String?
+  actionValue    String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  application  Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  runs         WorkflowRun[]
+
+  @@index([applicationId])
+  @@index([organizationId])
+  @@map("workflow")
+}
+
+model WorkflowRun {
+  id             String   @id @default(cuid())
+  organizationId String
+  workflowId     String
+  recordId       String?
+  status         String   @default("SUCCESS")
+  detail         Json?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workflow     Workflow     @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId, createdAt])
+  @@index([organizationId])
+  @@map("workflow_run")
+}
+
+// ---------------------------------------------------------------------------
+// Billing (mock mode for MVP)
+// ---------------------------------------------------------------------------
+
+enum Plan {
+  FREE
+  STARTER
+  BUSINESS
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  CANCELED
+  PAST_DUE
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  organizationId     String             @unique
+  plan               Plan               @default(FREE)
+  status             SubscriptionStatus @default(TRIALING)
+  mock               Boolean            @default(true)
+  currentPeriodStart DateTime           @default(now())
+  currentPeriodEnd   DateTime
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("subscription")
+}
