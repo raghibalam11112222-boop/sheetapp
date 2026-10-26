@@ -11,7 +11,7 @@ export const metadata = {
 };
 
 export default async function AdminPage() {
-  // Platform operators only (PLATFORM_ADMIN_CLERK_IDS) — never org admins.
+  // Platform operators only (PLATFORM_ADMIN_FIREBASE_IDS) — never org admins.
   await requirePlatformAdmin();
 
   const [

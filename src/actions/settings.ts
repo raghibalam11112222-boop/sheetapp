@@ -246,9 +246,6 @@ export async function deleteAccountAction() {
   return withAction(async () => {
     const ctx = await requireActionOrg();
 
-    const { auth, clerkClient } = await import("@clerk/nextjs/server");
-    const { userId: clerkId } = await auth();
-
     // ONE transaction for every DB mutation: a mid-sequence crash can no
     // longer strand a half-deleted account, and a failure rolls everything
     // back so the user can simply retry. Storage paths of files belonging to
@@ -288,22 +285,12 @@ export async function deleteAccountAction() {
     // the overall delete (deleteUploads never throws).
     await removeStoredFiles(deletedPaths);
 
-    // Clerk identity LAST, deliberately. The destructive DB work is already
-    // atomic; if this call fails the user is reprovisioned an empty account
-    // on their next request and can retry deletion themselves. The reverse
-    // order (Clerk first) strands orphaned data behind an identity the user
-    // can no longer sign in with, requiring support intervention.
-    if (clerkId) {
-      try {
-        const client = await clerkClient();
-        await client.users.deleteUser(clerkId);
-      } catch {
-        throw new ActionError(
-          "Your data was deleted, but revoking your login failed — please run Delete again to finish.",
-          "UNAVAILABLE"
-        );
-      }
-    }
+    // The Firebase identity itself is revoked by the client right after this
+    // action resolves (its own SDK holds the user handle; the server does not
+    // need — and deliberately does not keep — any Firebase Admin credential).
+    // Data-first/identity-last order preserved from the Clerk era: if the
+    // identity call fails, the user is reprovisioned an empty account on
+    // their next request and can retry deletion themselves.
     return { deleted: true };
   });
 }

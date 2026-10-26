@@ -13,9 +13,10 @@ export interface SessionView {
 }
 
 /**
- * Clerk manages sessions — there is no prisma `session` row anymore.
+ * Firebase Auth sessions live at Google — there is no prisma `session` row.
  * These actions are kept (same names/shapes) so Settings UI keeps working;
- * session revocation happens in the Clerk dashboard / Clerk SignIn.
+ * signing out everywhere = the device's own Firebase token is revoked via
+ * the SDK and the httpOnly cookie clears.
  */
 export async function listSessionsAction() {
   return withAction(async () => {

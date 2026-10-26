@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { getSessionUid } from "@/lib/auth/guards";
 import { getEarlyAccessStatus } from "@/lib/early-access";
 import { Navbar } from "@/components/landing/navbar";
 import { Hero } from "@/components/landing/hero";
@@ -25,10 +25,11 @@ import { Footer } from "@/components/landing/footer";
 export const dynamic = "force-dynamic";
 
 export default async function LandingPage() {
-  // Cheap auth probe: session JWT read only — no Backend API call and no
-  // DB upsert on the marketing page's every hit.
-  const { userId } = await auth();
-  const isAuthenticated = Boolean(userId);
+  // Cheap auth probe: Firebase ID token read + local verify only — no
+  // network auth service call and no DB work on the marketing page's
+  // every hit.
+  const sessionUid = await getSessionUid();
+  const isAuthenticated = Boolean(sessionUid);
   // Preserved flow: protected onboarding requires auth; proxy redirects
   // unauthenticated users to /sign-in?next=/onboarding/upload.
   const startHref = isAuthenticated ? "/dashboard" : "/onboarding/upload";

@@ -11,7 +11,7 @@ function slugify(input: string): string {
 
 /**
  * Creates the personal workspace for a brand new user (called from the
- * Clerk-provisioned signup path in guards.ts) and makes sure the user always
+ * Firebase-provisioned signup path in guards.ts) and makes sure the user always
  * one organization + membership + subscription, even if the hook failed.
  */
 export async function createInitialWorkspace(userId: string, label: string) {

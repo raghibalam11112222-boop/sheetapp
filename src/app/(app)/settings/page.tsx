@@ -39,7 +39,7 @@ export default async function SettingsPage() {
       prisma.generatedTable.count({ where: { organizationId: ctx.orgId } }),
     ]);
 
-  // Clerk manages sessions — no prisma rows. Keep shape for SettingsView.
+  // Firebase sessions live at Google — no prisma rows. Keep shape for SettingsView.
   const sessionTotal = 0;
 
   const appCountMap = new Map(recordCounts.map((r) => [r.applicationId, r.c]));

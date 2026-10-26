@@ -21,7 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { markNotificationsReadAction } from "@/actions/notifications";
-import { useClerk } from "@clerk/nextjs";
+import { signOutApp } from "@/lib/auth/client";
 import { can } from "@/lib/auth/permissions";
 import { setActiveOrgAction } from "@/actions/settings";
 import { Logo } from "@/components/logo";
@@ -41,7 +41,7 @@ export interface ShellNav {
   user: { name: string; email: string };
   org: { id: string; name: string };
   role: "ADMIN" | "MANAGER" | "MEMBER" | "VIEWER";
-  /** Server-computed (PLATFORM_ADMIN_CLERK_IDS allowlist) — org role never grants /admin. */
+  /** Server-computed (PLATFORM_ADMIN_FIREBASE_IDS allowlist) - org role never grants /admin. */
   isPlatformAdmin: boolean;
   orgs: { id: string; name: string }[];
   apps: {
@@ -64,7 +64,6 @@ function isActive(pathname: string, href: string) {
 export function AppShell({ nav, children }: { nav: ShellNav; children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { signOut } = useClerk();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
 
@@ -72,8 +71,9 @@ export function AppShell({ nav, children }: { nav: ShellNav; children: React.Rea
   const canWorkflow = can(nav.role, "workflow:manage");
 
   async function onSignOut() {
-    await signOut();
+    await signOutApp();
     router.push("/");
+    router.refresh();
   }
 
   async function switchOrg(orgId: string) {

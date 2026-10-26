@@ -1,13 +1,11 @@
-import { ClerkProvider } from "@clerk/nextjs";
-import { auth } from "@clerk/nextjs/server";
-import { isPlatformAdmin, requireOrg } from "@/lib/auth/guards";
+import { SessionSync } from "@/components/auth/session-sync";
+import { requireOrg, isPlatformAdmin } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db";
 import { getAppRecordCounts, getOrgApps } from "@/lib/data/shell";
 import { AppShell, type ShellNav } from "@/components/shell/app-shell";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireOrg();
-  const { userId: clerkId } = await auth();
 
   const [orgs, applications, countMap, notifications] = await Promise.all([
     prisma.membership.findMany({
@@ -28,7 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     user: { name: ctx.userName, email: ctx.userEmail },
     org: { id: ctx.orgId, name: orgs.find((m) => m.organization.id === ctx.orgId)?.organization.name ?? "Workspace" },
     role: ctx.role,
-    isPlatformAdmin: isPlatformAdmin(clerkId),
+    isPlatformAdmin: isPlatformAdmin(ctx.firebaseUid),
     orgs: orgs.map((m) => ({ id: m.organization.id, name: m.organization.name })),
     apps: applications.map((app) => ({
       id: app.id,
@@ -49,8 +47,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <ClerkProvider>
+    <>
+      {/* Keeps the httpOnly cookie sealed with the rotating Firebase token —
+          without it an open tab would 401 the moment the hour-old token turns
+          over between server requests. */}
+      <SessionSync />
       <AppShell nav={nav}>{children}</AppShell>
-    </ClerkProvider>
+    </>
   );
 }

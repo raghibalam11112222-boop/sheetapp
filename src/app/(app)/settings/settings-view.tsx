@@ -12,7 +12,10 @@ import {
   updateProfileAction,
   deleteAccountAction,
 } from "@/actions/settings";
-import { useClerk } from "@clerk/nextjs";
+import {
+  deleteSignedInFirebaseUser,
+  signOutApp,
+} from "@/lib/auth/client";
 import {
   revokeOtherSessionsAction,
   revokeSessionAction,
@@ -87,7 +90,6 @@ export interface SettingsState {
 
 export function SettingsView({ state }: { state: SettingsState }) {
   const router = useRouter();
-  const { signOut } = useClerk();
   const [orgName, setOrgName] = useState(state.orgName);
   const [profileName, setProfileName] = useState(state.profileName);
   const [savingOrg, setSavingOrg] = useState(false);
@@ -150,7 +152,18 @@ export function SettingsView({ state }: { state: SettingsState }) {
       toast.error(result.error);
       return;
     }
-    await signOut();
+    // All SheetApp data is gone — finish by revoking the Firebase identity
+    // itself and clearing the session cookie. Firebase requires a recent
+    // login for identity deletion: when it refuses we keep the destructive
+    // order safe (data first) and the user can retry in the fresh session
+    // they sign into next (the retry needs one more Delete press).
+    const identityDeletion = await deleteSignedInFirebaseUser();
+    if (!identityDeletion.ok) {
+      toast.message(
+        "Data deleted. Your login could not be revoked yet — sign in again and Delete once more to finish."
+      );
+    }
+    await signOutApp();
     router.push("/");
     router.refresh();
   }

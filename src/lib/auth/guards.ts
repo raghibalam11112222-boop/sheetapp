@@ -1,6 +1,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import {
+  verifyFirebaseIdToken,
+  type FirebaseClaims,
+} from "@/lib/auth/firebase-token";
+import { SESSION_COOKIE } from "@/lib/auth/session-cookie";
 import { prisma } from "@/lib/db";
 import { ensureOrganizationForUser } from "@/lib/auth/workspace";
 import { can, type Permission, type Role, PermissionError } from "@/lib/auth/permissions";
@@ -15,13 +19,13 @@ export class AuthRequiredError extends Error {
 }
 
 /**
- * Sign-in is authenticated at Clerk, but this identity is not allowed to
- * resolve to a user row (email already claimed by another Clerk identity, or
- * the legacy row's email isn't verified). Thrown deliberately instead of
+ * Sign-in is authenticated at Firebase, but this identity is not allowed to
+ * resolve to a user row (email already claimed by another sign-in identity,
+ * or the legacy row's email isn't verified). Thrown deliberately instead of
  * falling through to user.create — which would violate the unique-email
  * constraint (P2002) and 500 every page for this identity. Deliberately NOT
  * AuthRequiredError: requireOrg would redirect it to /sign-in and loop with
- * an active Clerk session.
+ * an active Firebase session.
  */
 export class AccountAccessDeniedError extends Error {
   constructor(reason: string) {
@@ -30,85 +34,103 @@ export class AccountAccessDeniedError extends Error {
   }
 }
 
-interface ClerkSession {
+export interface FirebaseSession {
   user: { id: string; email: string; name: string; image?: string | null };
-  // Clerk manages sessions server-side; the clerkId acts as the stable
-  // external session marker (no prisma session row under Clerk).
+  // Firebase sessions are stateless; the uid acts as the stable external
+  // session marker (no prisma session row under Firebase Auth).
   session: { token: string };
+  claims: FirebaseClaims;
 }
 
 /**
- * Clerk-backed session. Resolves the Clerk user to the internal `user` row
- * (upsert by clerkId, link legacy better-auth rows by email), ensuring org
- * membership. Returns null when signed out — same contract as before, so all
- * callers keep working.
+ * Reads the httpOnly cookie set at sign-in (`POST /api/auth/firebase`) and
+ * verifies the Firebase ID token locally against Google's public keys.
+ * Returns null when signed out (no cookie, invalid/expired token) — callers
+ * treat that the same way they treated a null Clerk session, so behavior and
+ * all call sites stay unchanged.
  */
-export async function getSession(): Promise<ClerkSession | null> {
-  const { userId: clerkId, sessionClaims } = await auth();
-  if (!clerkId) return null;
-
-  // Fast path: read identity from the session JWT (verified locally, no
-  // network). Only fall back to the Clerk Backend API when the token
-  // doesn't carry an email claim (non-standard token config).
-  const claimEmail = typeof sessionClaims?.email === "string" ? sessionClaims.email : "";
-  const claimName = typeof sessionClaims?.name === "string" ? sessionClaims.name : "";
-  const claimImage =
-    typeof sessionClaims?.picture === "string" ? (sessionClaims.picture as string) : null;
-
-  let email = claimEmail;
-  let name = claimName;
-  let image = claimImage;
-  let clerkUser: Awaited<ReturnType<typeof currentUser>> = null;
-  if (!email) {
-    clerkUser = await currentUser();
-    if (!clerkUser) return null;
-    const cu = clerkUser;
-    email =
-      cu.emailAddresses.find((e) => e.id === cu.primaryEmailAddressId)?.emailAddress ??
-      cu.emailAddresses[0]?.emailAddress ??
-      "";
-    if (!email) return null;
-    name =
-      cu.fullName ??
-      [cu.firstName, cu.lastName].filter(Boolean).join(" ") ??
-      email;
-    image = cu.imageUrl ?? null;
+export async function readSessionClaims(): Promise<FirebaseClaims | null> {
+  const jar = await cookies();
+  const token = jar.get(SESSION_COOKIE)?.value;
+  if (!token) return null;
+  try {
+    const { claims } = await verifyFirebaseIdToken(token);
+    return claims;
+  } catch (err) {
+    // Common visitor pattern: a tab picked up the request between the client
+    // SDK refreshing the token and the SessionSync re-post. Log, don't crash.
+    // Text is generic and infrequent so logs stay informative without noise.
+    if (process.env.NODE_ENV !== "test") {
+      console.warn(
+        "[SheetApp] session cookie rejected (expired/rotating token) — treating as signed out",
+        err
+      );
+    }
+    return null;
   }
-  if (!name) name = email;
+}
 
-  // 1) existing link via clerkId
-  let dbUser = await prisma.user.findUnique({ where: { clerkId } });
-  // 2) legacy better-auth row with same email → link it ONLY after the Clerk
-  //    Backend API confirms that exact email is verified. A session-JWT email
-  //    claim alone is never enough to bind an existing account, and a row
-  //    already claimed by a different Clerk ID is never re-linked. Both
-  //    refusal cases throw AccountAccessDeniedError (never fall through to
-  //    create — that would hit the unique-email constraint and 500 the app).
+/** Cheap identity probe — no DB access (landing page + public API routes). */
+export async function getSessionUid(): Promise<string | null> {
+  return (await readSessionClaims())?.uid ?? null;
+}
+
+/**
+ * Firebase-backed identity → internal `user` row bridge.
+ *
+ * 1) existing link via firebaseUid
+ * 2) legacy better-auth row with same email → link it ONLY when the ID
+ *    token's email claim is verified (Firebase marks Google-provider emails
+ *    verified; email/password requires the user to complete the verification
+ *    flow). A token's email claim alone is never enough to bind an existing
+ *    account, and a row already claimed by a different identity is never
+ *    re-linked. Both refusal cases throw AccountAccessDeniedError (never
+ *    fall through to create — that would hit the unique-email constraint
+ *    and 500 the app).
+ * 3) brand new identity → create row + initial workspace + signup event
+ */
+export async function resolveFirebaseUser(claims: FirebaseClaims) {
+  const uid = claims.uid;
+  const email = claims.email;
+  let name = claims.name || email;
+  let image = claims.picture;
+
+  // 1) existing link via firebaseUid
+  let dbUser = await prisma.user.findUnique({ where: { firebaseUid: uid } });
+  if (dbUser) {
+    // Firebase lets users change their display name/photo without a new
+    // token claim — refresh the profile fields on every hit where they
+    // drifted (e.g. first request after an account-settings edit).
+    if (name.slice(0, 120) !== dbUser.name || image !== dbUser.image) {
+      dbUser = await prisma.user.update({
+        where: { id: dbUser.id },
+        data: { name: name.slice(0, 120), image },
+      });
+    }
+    return dbUser;
+  }
+
+  // 2) legacy better-auth row with same email → verified-link only
   let emailVerified = false;
   if (!dbUser) {
     const byEmail = await prisma.user.findUnique({ where: { email } });
     if (byEmail) {
-      if (byEmail.clerkId) {
+      if (byEmail.firebaseUid) {
         console.error(
-          `[SheetApp] sign-in denied (email claimed by another identity) clerkId=${clerkId} email=${email}`
+          `[SheetApp] sign-in denied (email claimed by another identity) uid=${uid} email=${email}`
         );
         throw new AccountAccessDeniedError("email is linked to a different sign-in identity");
       }
-      const verifiedUser = clerkUser ?? (await currentUser());
-      const matched =
-        verifiedUser?.emailAddresses.find(
-          (a) => a.emailAddress.toLowerCase() === email.toLowerCase()
-        ) ?? null;
-      emailVerified = Boolean(matched?.verification?.status === "verified");
+      emailVerified = claims.emailVerified;
       if (!emailVerified) {
         console.error(
-          `[SheetApp] sign-in denied (unverified legacy email) clerkId=${clerkId} email=${email}`
+          `[SheetApp] sign-in denied (unverified legacy email) uid=${uid} email=${email}`
         );
         throw new AccountAccessDeniedError("legacy email address is not verified");
       }
       dbUser = await prisma.user.update({
         where: { id: byEmail.id },
-        data: { clerkId, name, image, emailVerified: true },
+        data: { firebaseUid: uid, name: name.slice(0, 120), image, emailVerified: true },
       });
       try {
         const orgId = await ensureOrganizationForUser(dbUser.id);
@@ -116,51 +138,69 @@ export async function getSession(): Promise<ClerkSession | null> {
         await logAudit({
           orgId,
           actorUserId: dbUser.id,
-          action: "auth.clerk_account_linked",
+          action: "auth.firebase_account_linked",
           entityType: "user",
           entityId: dbUser.id,
-          metadata: { clerkId, email },
+          metadata: { firebaseUid: uid, email },
         });
       } catch (err) {
         // Audit must never block sign-in, but it must not vanish silently
         // either — this event is the first thing an investigation checks.
-        console.error("[SheetApp] failed to audit clerk account link", err);
+        console.error("[SheetApp] failed to audit firebase account link", err);
       }
-    }
-  }
-  // 3) brand new user → create + workspace
-  if (!dbUser) {
-    let created = false;
-    try {
-      // emailVerified only when the Backend API actually confirmed it —
-      // never stamped from an unverified session claim.
-      dbUser = await prisma.user.create({
-        data: { clerkId, name: name.slice(0, 120), email, image, emailVerified },
-      });
-      created = true;
-    } catch (err) {
-      // Absorb the concurrent-first-request race (two tabs / RSC prefetch +
-      // navigation both creating the same identity): the unique clerkId/
-      // email constraint fires, so reload the row the winner created.
-      const again = await prisma.user.findUnique({ where: { clerkId } });
-      if (!again) throw err;
-      dbUser = again;
-    }
-    if (created) {
-      const { createInitialWorkspace } = await import("@/lib/auth/workspace");
-      await createInitialWorkspace(dbUser.id, dbUser.name || dbUser.email);
-      try {
-        const { track } = await import("@/lib/analytics/track");
-        await track("signup", { userId: dbUser.id });
-      } catch {
-        // analytics must never block auth
-      }
+      return dbUser;
     }
   }
 
+  // 3) brand new user → create + workspace
+  try {
+    // emailVerified mirrors the token claim — Firebase only marks the email
+    // verified after its own verification flow / Google sign-in.
+    dbUser = await prisma.user.create({
+      data: { firebaseUid: uid, name: name.slice(0, 120), email, image, emailVerified },
+    });
+  } catch (err) {
+    // Absorb the concurrent-first-request race (two tabs / RSC prefetch +
+    // navigation both creating the same identity): the unique firebaseUid/
+    // email constraint fires, so reload the row the winner created.
+    const again =
+      (await prisma.user.findUnique({ where: { firebaseUid: uid } })) ??
+      (await prisma.user.findUnique({ where: { email } }));
+    if (!again) throw err;
+    dbUser = again;
+    name = name || dbUser.name;
+    image = image ?? dbUser.image;
+    return dbUser;
+  }
+
+  const { createInitialWorkspace } = await import("@/lib/auth/workspace");
+  await createInitialWorkspace(dbUser.id, dbUser.name || dbUser.email);
+  try {
+    const { track } = await import("@/lib/analytics/track");
+    await track("signup", { userId: dbUser.id });
+  } catch {
+    // analytics must never block auth
+  }
+
+  return dbUser;
+}
+
+/**
+ * Firebase-backed session. Resolves the verified ID-token claims to the
+ * internal `user` row (see resolveFirebaseUser), ensuring org membership
+ * readiness. Returns null when signed out — same contract as before, so all
+ * callers keep working.
+ */
+export async function getSession(): Promise<FirebaseSession | null> {
+  const claims = await readSessionClaims();
+  if (!claims) return null;
+
+  const dbUser = await resolveFirebaseUser(claims);
+
   return {
     user: { id: dbUser.id, email: dbUser.email, name: dbUser.name, image: dbUser.image },
-    session: { token: clerkId },
+    session: { token: claims.uid },
+    claims,
   };
 }
 
@@ -190,6 +230,8 @@ export interface OrgContext {
   userName: string;
   orgId: string;
   role: Role;
+  /** Firebase uid (claims.uid), for surface flags like platform-admin. */
+  firebaseUid: string;
 }
 
 async function loadOrgContext(): Promise<OrgContext> {
@@ -208,6 +250,7 @@ async function loadOrgContext(): Promise<OrgContext> {
     userName: user.name || user.email,
     orgId,
     role: membership.role as Role,
+    firebaseUid: session.claims.uid,
   };
 }
 
@@ -237,15 +280,15 @@ export async function requirePermissionOn(
 /**
  * Platform-level operators (the SheetApp team), NOT workspace admins.
  *
- * Backed by the PLATFORM_ADMIN_CLERK_IDS env var (comma-separated Clerk user
- * IDs). When the var is unset or empty, nobody is a platform admin — the
+ * Backed by the PLATFORM_ADMIN_FIREBASE_IDS env var (comma-separated Firebase
+ * uids). When the var is unset or empty, nobody is a platform admin — the
  * admin surface is closed by default. Org-role "ADMIN" never grants access.
  */
 let warnedMissingAdminIds = false;
 
-export function isPlatformAdmin(clerkId: string | null | undefined): boolean {
-  if (!clerkId) return false;
-  const raw = process.env.PLATFORM_ADMIN_CLERK_IDS ?? "";
+export function isPlatformAdmin(firebaseUid: string | null | undefined): boolean {
+  if (!firebaseUid) return false;
+  const raw = process.env.PLATFORM_ADMIN_FIREBASE_IDS ?? "";
   // Split on commas AND whitespace: a newline from dashboard edits must not
   // silently break the allowlist (or, worse, smuggle a "1\n2" as one id).
   const ids = raw
@@ -255,17 +298,17 @@ export function isPlatformAdmin(clerkId: string | null | undefined): boolean {
   if (ids.length === 0 && process.env.NODE_ENV === "production" && !warnedMissingAdminIds) {
     warnedMissingAdminIds = true;
     console.warn(
-      "[SheetApp] PLATFORM_ADMIN_CLERK_IDS is unset — the /admin surface is closed for everyone."
+      "[SheetApp] PLATFORM_ADMIN_FIREBASE_IDS is unset — the /admin surface is closed for everyone."
     );
   }
-  return ids.includes(clerkId);
+  return ids.includes(firebaseUid);
 }
 
 /** For pages: redirects to sign-in (or dashboard) when not a platform admin. */
 export async function requirePlatformAdmin(): Promise<void> {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
-  if (!isPlatformAdmin(userId)) redirect("/dashboard");
+  const session = await getSession();
+  if (!session?.user) redirect("/sign-in");
+  if (!isPlatformAdmin(session.claims.uid)) redirect("/dashboard");
 }
 
 export { can };

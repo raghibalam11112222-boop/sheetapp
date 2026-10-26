@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getSessionUid } from "@/lib/auth/guards";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { answerAssistantQuestion } from "@/lib/ai/assistant";
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
+  // Cheap identity probe: verifies the session cookie locally (no auth
+  // service call, no DB touch) — good enough for the rate-limit key.
+  const userId = await getSessionUid();
 
   // Rate-limit key: per-USER when signed in (IP rotation must not buy a
   // fresh LLM quota), per-IP only for anonymous mascot traffic. Buckets are
