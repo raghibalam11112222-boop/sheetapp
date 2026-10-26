@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Separate self-contained project (own server + vendored/minified assets):
+    "roast-room/**",
   ]),
 ]);
 
